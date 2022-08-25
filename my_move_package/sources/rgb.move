@@ -36,6 +36,11 @@ module my_first_package::rgb {
         into_object.blue  = from_object.blue;
     }
 
+    public entry fun delete(object: ColorObject) {
+        let ColorObject { id, red: _, green: _, blue: _ } = object;
+        object::delete(id);
+    }
+
     // ------------- test ------------- //
 
     #[test]
@@ -104,6 +109,33 @@ module my_first_package::rgb {
             let (red, green, blue) = get_color(&obj1);
             assert!(red == 0 && green == 0 && blue == 0, 0);
             test_scenario::return_owned(scenario, obj1);
+        };
+    }
+
+    #[test]
+    fun test2() {
+        use sui::test_scenario;
+        use std::debug;
+
+        let owner = @0x1;
+
+        let scenario = &mut test_scenario::begin(&owner);
+        {
+            let ctx = test_scenario::ctx(scenario);
+            create(255, 0, 255, ctx);
+        };
+        // Delete the ColorObject we just created.
+        test_scenario::next_tx(scenario, &owner);
+        {
+            let object = test_scenario::take_owned<ColorObject>(scenario);
+            delete(object);
+        };
+        // Verify that the object was indeed deleted.
+        test_scenario::next_tx(scenario, &owner);
+        {
+            let own = test_scenario::can_take_owned<ColorObject>(scenario);
+            debug::print(&own);
+            assert!(!test_scenario::can_take_owned<ColorObject>(scenario), 0);
         }
     }
 }
